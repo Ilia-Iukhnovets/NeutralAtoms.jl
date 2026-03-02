@@ -38,8 +38,7 @@ export
     simulation_czlp, CZLPConfig, get_two_qubit_probs, plot_two_qubit_probs,
     simulation_one_shift, simulation_czlp_rec2d,
 
-    get_gate, project_on_qubit,
-    get_parity_fidelity, get_cz_infidelity,
+    get_gate, project_on_qubit,     get_parity_fidelity, 
     get_parity,
     get_fidelity_osc, get_parity_osc
         
