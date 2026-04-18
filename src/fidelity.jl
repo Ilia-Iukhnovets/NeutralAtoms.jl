@@ -1,3 +1,4 @@
+
 function get_fidelity_with_rz_phi(ρ, state, ϕ_rz)
     ones = ket_1 ⊗ ket_1
     CZ = Id ⊗ Id - 2*(ones ⊗ dagger(ones));
@@ -7,6 +8,14 @@ function get_fidelity_with_rz_phi(ρ, state, ϕ_rz)
     return real(dagger(state_tr) * global_RZ(ϕ_rz) * ρ * dagger( global_RZ(ϕ_rz)) * state_tr)
 end
 
+"""CZ_calibration_by_fidelity_oscillation(cfg::CZLPConfig; ode_kwargs...)
+
+    Scan a global `RZ` phase and return the Bell-state fidelity curve used to
+    calibrate the CZ protocol.
+
+    # Returns
+    - `(ϕ_list, F_list, ϕ_opt)`, where `ϕ_opt` maximizes the fidelity proxy.
+"""
 function CZ_calibration_by_fidelity_oscillation(cfg::CZLPConfig; ode_kwargs...)
     cfg_parity = deepcopy(cfg)
 
@@ -26,6 +35,11 @@ function CZ_calibration_by_fidelity_oscillation(cfg::CZLPConfig; ode_kwargs...)
     return ϕ_list, F_list, ϕ_list[argmax(F_list)]
 end
 
+"""get_parity_osc(cfg::CZLPConfig, ϕ_cal; ode_kwargs...)
+
+    Compute the parity oscillation expected after applying the CZ sequence and the
+    phase correction `ϕ_cal`.
+"""
 function get_parity_osc(ρ, ϕ_cal)
     S_ZZ = Z ⊗ Z;
 
@@ -50,15 +64,23 @@ basis_fidelity_states = [
     (ket_0 - 1.0im * ket_1)/sqrt(2)
     ]
 
+"""get_rydberg_fidelity_configs(cfg, n_samples=20)
+
+    Construct a set of derived configurations used for single-atom error-budget
+    analysis.
+
+    Each returned configuration isolates one decoherence mechanism or the combined
+    error budget.
+"""
 function get_rydberg_fidelity_configs(cfg, n_samples=20)
     configs = OrderedDict()
 
     # Config to measure error from intermediate state decay
     cfg_t = deepcopy(cfg)
     cfg_t.atom_params[2] = 0.1
-    cfg_t.spontaneous_decay_intermediate = true
-    cfg_t.spontaneous_decay_rydberg      = false
-    cfg_t.laser_noise = false
+    cfg_t.error_options["spontaneous_decay_intermediate"] = true
+    cfg_t.error_options["spontaneous_decay_rydberg"]      = false
+    cfg_t.error_options["laser_noise"] = false
     cfg_t.free_motion = true
     cfg_t.n_samples = 1
     configs["Intermdeiate state decay"] = cfg_t
@@ -66,9 +88,9 @@ function get_rydberg_fidelity_configs(cfg, n_samples=20)
     # Config to measure error from rydberg state decay
     cfg_t = deepcopy(cfg)
     cfg_t.atom_params[2] = 0.1
-    cfg_t.spontaneous_decay_intermediate = false
-    cfg_t.spontaneous_decay_rydberg      = true
-    cfg_t.laser_noise = false
+    cfg_t.error_options["spontaneous_decay_intermediate"] = false
+    cfg_t.error_options["spontaneous_decay_rydberg"]      = true
+    cfg_t.error_options["laser_noise"] = false
     cfg_t.free_motion = true
     cfg_t.n_samples = 1
     configs["Rydberg state decay"] = cfg_t
@@ -76,27 +98,27 @@ function get_rydberg_fidelity_configs(cfg, n_samples=20)
     # Config to measure error from laser_noise
     cfg_t = deepcopy(cfg)
     cfg_t.atom_params[2] = 0.1
-    cfg_t.spontaneous_decay_intermediate = false
-    cfg_t.spontaneous_decay_rydberg = false
-    cfg_t.laser_noise = true
+    cfg_t.error_options["spontaneous_decay_intermediate"] = false
+    cfg_t.error_options["spontaneous_decay_rydberg"] = false
+    cfg_t.error_options["laser_noise"] = true
     cfg_t.free_motion = false
     cfg_t.n_samples = n_samples
     configs["Laser noise"] = cfg_t
 
     # Config to measure error from temperature
     cfg_t = deepcopy(cfg)
-    cfg_t.spontaneous_decay_intermediate = false
-    cfg_t.spontaneous_decay_rydberg = false
-    cfg_t.laser_noise = false
+    cfg_t.error_options["spontaneous_decay_intermediate"] = false
+    cfg_t.error_options["spontaneous_decay_rydberg"] = false
+    cfg_t.error_options["laser_noise"] = false
     cfg_t.free_motion = true
     cfg_t.n_samples = n_samples
     configs["Atom motion"] = cfg_t
 
     # Config to measure total error
     cfg_t = deepcopy(cfg)
-    cfg_t.spontaneous_decay_intermediate = true
-    cfg_t.spontaneous_decay_rydberg = true
-    cfg_t.laser_noise = true
+    cfg_t.error_options["spontaneous_decay_intermediate"] = true
+    cfg_t.error_options["spontaneous_decay_rydberg"] = true
+    cfg_t.error_options["laser_noise"] = true
     cfg_t.free_motion = true
     cfg_t.n_samples = n_samples
     configs["Total"] = cfg_t
@@ -104,6 +126,15 @@ function get_rydberg_fidelity_configs(cfg, n_samples=20)
     return configs
 end 
 
+"""get_rydberg_infidelity(cfg::RydbergConfig; U=dense(identityoperator(basis)),
+        states=basis_fidelity_states, n_samples=100, ode_kwargs...)
+
+    Estimate a single-atom gate infidelity budget by averaging over input states and
+    error channels.
+
+    The returned dictionary separates motion, laser noise, spontaneous decay, and
+    total error contributions for the effective two-photon model.
+"""
 function get_rydberg_infidelity(
     cfg::RydbergConfig;
     U=dense(identityoperator(basis)), 
@@ -134,6 +165,12 @@ function get_rydberg_infidelity(
     return infidelities
 end
 
+"""get_cz_infidelity(cfg::CZLPConfig; n_samples=1, ode_kwargs...)
+
+    Estimate a CZ-gate infidelity budget using the parity-calibration workflow.
+
+    The result separates calibration error from the remaining decoherence channels.
+"""
 function get_cz_infidelity(
     cfg::CZLPConfig;
     n_samples=1,
@@ -148,13 +185,13 @@ function get_cz_infidelity(
     Had = Id ⊗ Hadamard
     
     cfg_t = deepcopy(cfg)
-    cfg_t.spontaneous_decay_intermediate    = false
-    cfg_t.spontaneous_decay_rydberg         = false
-    cfg_t.laser_noise                       = false
+    cfg_t.error_options["spontaneous_decay_intermediate"]    = false
+    cfg_t.error_options["spontaneous_decay_rydberg"]         = false
+    cfg_t.error_options["laser_noise"]                       = false
     cfg_t.atom_params[2]                    = 0.1
     cfg_t.n_samples                         = 1
 
-    println("Measuring error from calibration...")
+    println("Measuring intermediate state probability...")
     ϕ_RZ = get_parity_fidelity(cfg_t)[3];
     global_RZ = RZ(ϕ_RZ) ⊗ RZ(ϕ_RZ);
 
@@ -164,8 +201,7 @@ function get_cz_infidelity(
     calibration_error = 1.0 - real(dagger(Φp) * ρ_real * Φp)
 
     println()
-    println("Infidelity from calibration error: $(round(100.0*calibration_error; digits=4)) %")
-
+    println("Intermediate state probability: $(round(100.0*calibration_error; digits=4)) %")
     
     for name in ProgressBar(names)
         cfg_t = deepcopy(configs[name])

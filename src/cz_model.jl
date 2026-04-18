@@ -1,4 +1,7 @@
-#Jump operators for master equation 
+"""JumpOperatorsTwo(decay_params)
+
+    Construct the Lindblad jump operators for the two-atom CZ model.
+"""
 @inline function JumpOperatorsTwo(decay_params)
     Γ0, Γ1, Γl, Γr = decay_params;
     operators = [
@@ -8,19 +11,31 @@
     return operators
 end;
 
+"""get_V(sample1, sample2, ωr, ωz, error_options, c6, eps=1e-18)
 
-@inline function get_V(sample1, sample2,  ωr, ωz, atom_motion, free_motion, c6, eps=1e-18)
-    X1, Y1, Z1 = get_atom_trajectories(sample1, ωr, ωz, atom_motion, free_motion)[1:3]
-    X2, Y2, Z2 = get_atom_trajectories(sample2, ωr, ωz, atom_motion, free_motion)[1:3]
+    Return the blockade interaction `V(t)` between two sampled atoms.
+
+    The interaction follows the van der Waals scaling `c6 / R(t)^6`.
+"""
+@inline function get_V(sample1, sample2,  ωr, ωz, err_optns, c6, eps=1e-18)
+    X1, Y1, Z1 = get_atom_trajectories(sample1, ωr, ωz, err_optns)[1:3]
+    X2, Y2, Z2 = get_atom_trajectories(sample2, ωr, ωz, err_optns)[1:3]
     V = t -> (c6 / (eps + ((X1(t) - X2(t))^2 + (Y1(t) - Y2(t))^2 + (Z1(t) - Z2(t))^2)^3))
     return V
 end
 
+"""GenerateHamiltonianTwo(sample1, sample2, ωr, ωz, free_motion, atom_motion,
+        tspan_noise, f, nodes, red_laser_phase_amplitudes,
+        blue_laser_phase_amplitudes, red_laser_params, blue_laser_params, ϕr,
+        ϕb, Δ0, δ0, c6)
 
+    Assemble the time-dependent two-atom Hamiltonian for the blockade-mediated CZ
+    simulation.
+"""
 @inline function GenerateHamiltonianTwo(
     sample1, sample2,
     ωr, ωz,
-    free_motion, atom_motion,
+    error_options,
     tspan_noise, f, nodes,
     first_laser_phase_amplitudes, second_laser_phase_amplitudes,
     first_laser_params, second_laser_params,
@@ -35,7 +50,19 @@ end
 
     # Trajectories
     for i in 1:2
-        X, Y, Z, Vx, Vy, Vz = get_atom_trajectories(samples[i], ωr, ωz, atom_motion, free_motion);
+        X, Y, Z, Vx, Vy, Vz = get_atom_trajectories(samples[i], ωr, ωz, error_options);
+
+        if error_options["Doppler"]
+            coefficients_two = [coefficients_two; [
+                t -> Δ(Vx(t), Vz(t), first_laser_params) - Δ0,
+                t -> δ(Vx(t), Vz(t), first_laser_params, second_laser_params) - δ0,
+            ]]
+        else
+            coefficients_two = [coefficients_two; [
+                t -> - Δ0,
+                t ->  - δ0,
+            ]]
+        end
 
         # Generate phase noise traces for red and blue lasers
         ϕ_red_res  = ϕ(tspan_noise, f, first_laser_phase_amplitudes);
@@ -45,15 +72,13 @@ end
         ϕ_1  = interpolate(nodes, ϕ_red_res, Gridded(Linear()));
         ϕ_2 = interpolate(nodes, ϕ_blue_res, Gridded(Linear()));
 
-
         # Hamiltonian params trajectories
         Ω1 = t -> exp(1.0im * (ϕ_1(t) + ϕ_first(t))) * Ω(X(t), Y(t), Z(t), first_laser_params );
         Ω2 = t -> exp(1.0im * (ϕ_2(t) + ϕ_sec(t))) * Ω(X(t), Y(t), Z(t), second_laser_params);
 
+        
         coefficients_two = [coefficients_two; 
             [
-                t -> Δ(Vx(t), Vz(t), first_laser_params) - Δ0,
-                t -> δ(Vx(t), Vz(t), first_laser_params, second_laser_params) - δ0,
                 t -> Ω1(t)       / 2.0,
                 t -> conj(Ω1(t)) / 2.0,
                 t -> Ω2(t)       / 2.0,
@@ -61,18 +86,21 @@ end
             ]
         ];
     end;
-    V = get_V(sample1, sample2, ωr, ωz, atom_motion, free_motion, c6)
+    V = get_V(sample1, sample2, ωr, ωz, error_options, c6)
     push!(coefficients_two, V)
     H = TimeDependentSum(coefficients_two, operators_two);
 
     return H
 end;
 
+"""get_blockade_stark_shift_factor(trap_params, atom_params, atom_centers, Ω,
+        c6, n_samples=10000)
 
-"""
-To compensate for non-ideal blockade we have to correct ΔtoΩ as ΔtoΩ - Ω/2V
+    Estimate the finite-temperature blockade correction used when calibrating the
+    CZ pulse.
 
-Here we average V over atom temperature and get 
+    This helper averages the inverse sixth power of the atom separation over thermal
+    sampling and returns the resulting Stark-shift factor.
 """
 function get_blockade_stark_shift_factor(
     trap_params,
@@ -103,6 +131,26 @@ function get_blockade_stark_shift_factor(
     return - Ω / (2.0 * c6 * Rm6)
 end
 
+"""simulation_czlp(cfg::CZLPConfig; ode_kwargs...)
+
+    Simulate the two-atom global-pulse controlled-phase protocol.
+
+    The model follows the blockade-based CZ logic highlighted in
+    [arXiv:1908.06101](https://arxiv.org/abs/1908.06101): two global Rydberg pulses,
+    an inter-pulse phase step `ξ`, finite-temperature motion, and optional laser
+    noise and spontaneous decay.
+
+    # Arguments
+    - `cfg::CZLPConfig`: two-atom phase-gate configuration.
+
+    # Keywords
+    - `ode_kwargs...`: keyword arguments forwarded to
+    `timeevolution.master_dynamic`.
+
+    # Returns
+    - `(ρ, ρ2)`, the first and second moments of the two-atom density-matrix
+    trajectory.
+"""
 function simulation_czlp(
     cfg::CZLPConfig;
     ode_kwargs...)
@@ -130,13 +178,13 @@ function simulation_czlp(
 
     tspan_noise = [0.0:cfg.tspan[end]/1000:cfg.tspan[end];];
     nodes = (tspan_noise, );
-    first_laser_phase_amplitudes  = cfg.laser_noise ? cfg.first_laser_phase_amplitudes  : zero(cfg.first_laser_phase_amplitudes);
-    second_laser_phase_amplitudes = cfg.laser_noise ? cfg.second_laser_phase_amplitudes : zero(cfg.second_laser_phase_amplitudes);
+    first_laser_phase_amplitudes  = cfg.error_options["laser_noise"] ? cfg.first_laser_phase_amplitudes  : zero(cfg.first_laser_phase_amplitudes);
+    second_laser_phase_amplitudes = cfg.error_options["laser_noise"] ? cfg.second_laser_phase_amplitudes : zero(cfg.second_laser_phase_amplitudes);
     ϕ_sec = t -> 0.0;
     ϕ_first = t -> t < τ ? 0.0 : cfg.ξ;
 
-    Γ0, Γ1, Γl   = cfg.spontaneous_decay_intermediate ? cfg.decay_params[1:3] : zeros(3)
-    Γr           = cfg.spontaneous_decay_rydberg      ? cfg.decay_params[4]   :  0.0
+    Γ0, Γ1, Γl   = cfg.error_options["spontaneous_decay_intermediate"] ? cfg.decay_params[1:3] : zeros(3)
+    Γr           = cfg.error_options["spontaneous_decay_rydberg"]      ? cfg.decay_params[4]   :  0.0
     decay_params = [Γ0, Γ1, Γl, Γr]
     J = JumpOperatorsTwo(decay_params)
 
@@ -151,7 +199,7 @@ function simulation_czlp(
        H = GenerateHamiltonianTwo(
                 samples1[i], samples2[i],
                 ωr, ωz,
-                cfg.free_motion, cfg.atom_motion,
+                cfg.error_options,
                 tspan_noise, cfg.f, nodes,
                 first_laser_phase_amplitudes, second_laser_phase_amplitudes,
                 cfg.first_laser_params, cfg.second_laser_params,

@@ -1,18 +1,27 @@
-#_genlaguerre(n, α, x) = binomial(n+α,n) * HypergeometricFunctions.M(-n, α+1, x)
-#Ω0, w0, z0, beam_type, n = laser_params; []
+"""Gouy_phase((l, m, z, z_r))
 
+    Return the Gouy phase for a mode with transverse indices `l` and `m`.
+"""
 function Gouy_phase(lmzzr_gouy)
     l, m, z, z_r = lmzzr_gouy
     return ((l+m+1) * atan(z/z_r))
 end
 
 _genlaguerre(n, α, x) = binomial(n+α,n) * HypergeometricFunctions.M(-n, α+1, x)
+""" LG(r2, w, k)
+
+    Return the radial Laguerre-Gauss factor used by the simple flat-top beam model.
+"""
 function LG(r2, w, k)
     #L_k = _genlaguerre(k,0, 2 .* r.^2 ./ w^2)
     #norm = 2^(n/2) * factorial(n)^0.5 * (pi/2)^(1/4)
     return exp.(-r2 ./ w^2) .* _genlaguerre(k,0, 2 .* r2 ./ w^2) #Hn.(2^0.5 .* x ./ w ) #./ norm
 end
 
+""" HG(x, w, n)
+
+    Return the Hermite-Gauss factor used by the simple flat-top beam model.
+"""
 @inline function HG(x, w, n)
     her_arg = zeros(n+1)
     her_arg[n+1] = 1
@@ -22,6 +31,11 @@ end
     return exp.(-x.^2 ./ w.^2) .* Hn.(2^0.5 .* x ./ w ) #./ norm
 end
 
+"""LG_coeff(k, n)
+
+    Return the coefficient multiplying the `k`th Laguerre-Gauss term in the simple
+    flat-top expansion of order `n`.
+"""
 function LG_coeff(k,n)
     res = 0.0
     for i in k:n
@@ -30,6 +44,11 @@ function LG_coeff(k,n)
     return (-1.0)^k * res / factorial(k)
 end
 
+""" HG_coeff(k, n)
+
+    Return the coefficient multiplying the `k`th Hermite-Gauss term in the simple
+    flat-top expansion of order `n`.
+"""
 function HG_coeff(k,n)
     res = 0.0
     for i in k:n
@@ -47,6 +66,11 @@ function HG_coeff(k,n)
     return res
 end 
 
+""" HG_coefficients(p, q)
+
+    Return the coefficient matrix used by the separable Hermite-Gauss flat-top
+    construction.
+"""
 function HG_coefficients(p,q)
     c = zeros(p+1,q+1)
     r=trunc(Int,p/2)
@@ -60,6 +84,14 @@ function HG_coefficients(p,q)
     return c
 end
 
+""" simple_flattopHG_field(x, y, z, laser_params)
+
+    Return the complex field amplitude of the package's simple Hermite-Gauss
+    flat-top beam model.
+
+    This helper is used by `Ω` when the blue excitation beam is described by a
+    Hermite-Gauss superposition instead of a single Gaussian mode.
+"""
 function simple_flattopHG_field(x,y,z,laser_params)
     Ω, w0, zr, θ, n, m, sqz = laser_params; 
     #x, z = x0*cos(θ) - z0*sin(θ), x0*sin(θ) + z0*cos(θ)
@@ -80,6 +112,11 @@ function simple_flattopHG_field(x,y,z,laser_params)
     return Ω .* w0 .* E_sum ./ w .* exp.(-1.0im * phase0) 
 end;
 
+"""simple_flattopLG_field(x, y, z, laser_params)
+
+    Return the complex field amplitude of the package's simple Laguerre-Gauss
+    flat-top beam model.
+"""
 function simple_flattopLG_field(x,y,z,laser_params)
     Ω, w0, zr, θ, l = laser_params; #Ω, w0, zr, θ, l, m = laser_params;
     w = w0 .* sqrt.(1.0 .+ (z ./zr) .^2);

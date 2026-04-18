@@ -73,13 +73,20 @@ function _get_6P_config()
        n_samples = 20;
        shift = [0.0,0.0,0.0]
 
-       atom_motion = true;
-       free_motion = true;
-       laser_noise = false;
-       spontaneous_decay_intermediate = true #false;
-       spontaneous_decay_rydberg = true #false;
-       # spontaneous_decay_intermediate = false;
-       # spontaneous_decay_rydberg = false;
+       #atom_motion = true;
+       #free_motion = true;
+       #laser_noise = false;
+       #spontaneous_decay_intermediate = true #false;
+       #spontaneous_decay_rydberg = true #false;
+       error_options = Dict("laser_noise" => false,
+                        "spontaneous_decay_intermediate" => true,
+                        "spontaneous_decay_rydberg" => true,
+                        "atom_motion" => true,
+                        "free_motion" => true,
+                        "xy_motion" => true,
+                        "z_motion" => true,
+                        "Doppler" => true
+                        )
 
        cfg = NeutralAtoms.RydbergConfig(
               tspan,
@@ -100,11 +107,7 @@ function _get_6P_config()
               detuning_params,
               decay_params,
 
-              atom_motion,
-              free_motion,
-              laser_noise,
-              spontaneous_decay_intermediate,
-              spontaneous_decay_rydberg
+              error_options
               );
  
        d = 2.7 #2.0;
@@ -154,11 +157,7 @@ function _get_6P_config()
               detuning_params,
               decay_params,
 
-              atom_motion,
-              free_motion,
-              laser_noise,
-              spontaneous_decay_intermediate,
-              spontaneous_decay_rydberg,
+              error_options,
 
               atom_centers,
               c6,

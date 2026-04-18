@@ -1,6 +1,16 @@
+"""
+    NeutralAtoms
+
+Simulation tools for neutral-atom experiments in optical tweezers.
+
+The package focuses on the workflow used in two-photon Rydberg experiments:
+trap characterization, thermal sampling of atom motion, stochastic laser phase
+noise, Lindblad dynamics for single-atom excitation, and blockade-mediated
+two-qubit phase-gate simulations.
+"""
 module NeutralAtoms
 using Distributed
-
+using Markdown
 using Distributions, Random
 using PhysicalConstants.CODATA2018: c_0, k_B, m_u
 using Unitful
@@ -14,7 +24,6 @@ using HypergeometricFunctions
 using OrderedCollections
 using Plots
 using ProgressBars
-using MPI
 using OrdinaryDiffEq
 using Colors
 using Statistics
@@ -35,9 +44,9 @@ export
     simulation, RydbergConfig, get_rydberg_probs, plot_rydberg_probs,
     simulation_czlp, CZLPConfig, get_two_qubit_probs, plot_two_qubit_probs,
 
-    get_gate, project_on_qubit, get_parity_fidelity, 
-    get_parity, get_p_prob_and_fid, get_fidelity_phi,
-    get_fidelity_osc, get_parity_osc
+    get_gate, project_on_qubit, get_parity_osc,
+    get_fidelity_with_rz_phi, CZ_calibration_by_fidelity_oscillation,
+    get_rydberg_fidelity_configs, get_rydberg_infidelity, get_cz_infidelity
         
 include("utilities.jl")
 include("basic_experiments.jl")

@@ -92,7 +92,7 @@ function get_default_configs()
        spontaneous_decay_rydberg = true #false;
        # spontaneous_decay_intermediate = false;
        # spontaneous_decay_rydberg = false;
-       err_optns = Dict("laser_noise" => false,
+       error_options = Dict("laser_noise" => false,
                         "spontaneous_decay_intermediate" => true,
                         "spontaneous_decay_rydberg" => true,
                         "atom_motion" => true,
@@ -121,12 +121,8 @@ function get_default_configs()
 
               detuning_params,
               decay_params,
-
-              atom_motion,
-              free_motion,
-              laser_noise,
-              spontaneous_decay_intermediate,
-              spontaneous_decay_rydberg
+              
+              error_options
               );
  
        d = 3.4 #2.0;
@@ -177,11 +173,7 @@ function get_default_configs()
               detuning_params,
               decay_params,
 
-              atom_motion,
-              free_motion,
-              laser_noise,
-              spontaneous_decay_intermediate,
-              spontaneous_decay_rydberg,
+              error_options,
 
               atom_centers,
               c6,
