@@ -13,21 +13,21 @@ Construct the Lindblad jump operators for the two-atom CZ model.
 end;
 
 """
-    get_V(sample1, sample2, ωr, ωz, error_options, c6, eps=1e-18)
+    get_V(sample1, sample2, center1, center2, ωr, ωz, error_options, c6, eps=1e-18)
 
 Return the blockade interaction `V(t)` between two sampled atoms.
 
 The interaction follows the van der Waals scaling `c6 / R(t)^6`.
 """
-@inline function get_V(sample1, sample2,  ωr, ωz, err_optns, c6, eps=1e-18)
-    X1, Y1, Z1 = get_atom_trajectories(sample1, ωr, ωz, err_optns)[1:3]
-    X2, Y2, Z2 = get_atom_trajectories(sample2, ωr, ωz, err_optns)[1:3]
+@inline function get_V(sample1, sample2, center1, center2, ωr, ωz, err_optns, c6, eps=1e-18)
+    X1, Y1, Z1 = get_atom_trajectories(sample1, center1, ωr, ωz, err_optns)[1:3]
+    X2, Y2, Z2 = get_atom_trajectories(sample2, center2, ωr, ωz, err_optns)[1:3]
     V = t -> (c6 / (eps + ((X1(t) - X2(t))^2 + (Y1(t) - Y2(t))^2 + (Z1(t) - Z2(t))^2)^3))
     return V
 end
 
 """
-    GenerateHamiltonianTwo(sample1, sample2, ωr, ωz, free_motion, atom_motion,
+    GenerateHamiltonianTwo(sample1, sample2, center1, center2, ωr, ωz,
         tspan_noise, f, nodes, red_laser_phase_amplitudes,
         blue_laser_phase_amplitudes, red_laser_params, blue_laser_params, ϕr,
         ϕb, Δ0, δ0, c6)
@@ -37,6 +37,7 @@ simulation.
 """
 @inline function GenerateHamiltonianTwo(
     sample1, sample2,
+    center1, center2,
     ωr, ωz,
     error_options,
     tspan_noise, f, nodes,
@@ -50,10 +51,11 @@ simulation.
     coefficients_two = Vector{Function}();
     # coefficients_two = [];
     samples = [sample1, sample2]
+    centers = [center1, center2]
 
     # Trajectories
     for i in 1:2
-        X, Y, Z, Vx, Vy, Vz = get_atom_trajectories(samples[i], ωr, ωz, error_options);
+        X, Y, Z, Vx, Vy, Vz = get_atom_trajectories(samples[i], centers[i], ωr, ωz, error_options);
 
         if error_options["Doppler"]
             coefficients_two = [coefficients_two; [
@@ -89,7 +91,7 @@ simulation.
             ]
         ];
     end;
-    V = get_V(sample1, sample2, ωr, ωz, error_options, c6)
+    V = get_V(sample1, sample2, center1, center2, ωr, ωz, error_options, c6)
     push!(coefficients_two, V)
     H = TimeDependentSum(coefficients_two, operators_two);
 
@@ -159,8 +161,7 @@ noise and spontaneous decay.
 function simulation_czlp(
     cfg::CZLPConfig;
     ode_kwargs...)
-    # Generate samples of atoms and shift their centers
-    shift1, shift2 = [[cfg.atom_centers[1];zeros(3)]], [[cfg.atom_centers[2];zeros(3)]]
+    # Generate thermal offsets around each atom center.
     samples1 = samples_generate(
         cfg.trap_params,
         cfg.atom_params,
@@ -173,8 +174,6 @@ function simulation_czlp(
         cfg.n_samples;
         harmonic=true
         )[1]
-    samples1 .+= shift1
-    samples2 .+= shift2
     
     # Unpack all parameters
     ωr, ωz = trap_frequencies(cfg.atom_params, cfg.trap_params);
@@ -203,6 +202,7 @@ function simulation_czlp(
     for i in ProgressBars.ProgressBar(1:cfg.n_samples)
        H = GenerateHamiltonianTwo(
                 samples1[i], samples2[i],
+                cfg.atom_centers[1], cfg.atom_centers[2],
                 ωr, ωz,
                 cfg.error_options,
                 tspan_noise, cfg.f, nodes,

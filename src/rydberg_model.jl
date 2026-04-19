@@ -33,37 +33,49 @@ const operators = [np, nr, σ1p, σp1, σpr, σrp];
 """
     get_atom_trajectories(sample, ωr, ωz, err_optns)
 
+    get_atom_trajectories(sample, center, ωr, ωz, err_optns)
+
 Construct position and velocity trajectories for one sampled atom.
 
 The returned closures are used internally when assembling time-dependent
 Hamiltonians for single- and two-atom simulations.
 """
 @inline function get_atom_trajectories(
-    sample::Vector{Float64}, 
+    sample::AbstractVector{<:Real},
     ωr::Float64,
     ωz::Float64,
-    err_optns::Dict{String, Any})
+    err_optns::AbstractDict{String, <:Any})
+    return get_atom_trajectories(sample, zeros(Float64, 3), ωr, ωz, err_optns)
+end
+
+@inline function get_atom_trajectories(
+    sample::AbstractVector{<:Real},
+    center::AbstractVector{<:Real},
+    ωr::Float64,
+    ωz::Float64,
+    err_optns::AbstractDict{String, <:Any})
     
     free_motion = err_optns["free_motion"]
     atom_motion = err_optns["atom_motion"]
+    cx, cy, cz = center
 
     x, y, z, vx, vy, vz = atom_motion ? sample : zeros(Float64, 6);
     if err_optns["xy_motion"]
-        X  = t -> R(t, x, vx, ωr; free=free_motion);
-        Y  = t -> R(t, y, vy, ωr; free=free_motion);
+        X  = t -> cx + R(t, x, vx, ωr; free=free_motion);
+        Y  = t -> cy + R(t, y, vy, ωr; free=free_motion);
         Vx = t -> V(t, x, vx, ωr; free=free_motion);
         Vy = t -> V(t, y, vy, ωr; free=free_motion);
     else
-        X  = t -> 0.0
-        Y  = t -> 0.0 
+        X  = t -> cx
+        Y  = t -> cy
         Vx = t -> 0.0 
         Vy = t -> 0.0
     end
     if err_optns["z_motion"]
-        Z  = t -> R(t, z, vz, ωz; free=free_motion);
+        Z  = t -> cz + R(t, z, vz, ωz; free=free_motion);
         Vz = t -> V(t, z, vz, ωz; free=free_motion);
     else
-        Z  = t -> 0.0
+        Z  = t -> cz
         Vz = t -> 0.0 
     end
     return X, Y, Z, Vx, Vy, Vz;
@@ -173,7 +185,7 @@ Construct the Lindblad jump operators for the single-atom model.
 end;
 
 """
-    GenerateHamiltonian(sample, ωr, ωz, error_options, laser_noise,
+    GenerateHamiltonian(sample, center, ωr, ωz, error_options,
         tspan_noise, f, red_laser_phase_amplitudes, blue_laser_phase_amplitudes,
         nodes, red_laser_params, blue_laser_params, Δ0, δ0)
 
@@ -184,7 +196,9 @@ This combines thermal motion, Doppler shifts, beam inhomogeneity, and optional
 laser phase noise into the effective two-photon model.
 """
 @inline function GenerateHamiltonian(
-    sample,     ωr, ωz,
+    sample,
+    center,
+    ωr, ωz,
     error_options,
     tspan_noise,    f,
     first_laser_phase_amplitudes,
@@ -195,7 +209,7 @@ laser phase noise into the effective two-photon model.
     Δ0,     δ0    )
 
     # Trajectories
-    X, Y, Z, Vx, Vy, Vz = get_atom_trajectories(sample, ωr, ωz, error_options);
+    X, Y, Z, Vx, Vy, Vz = get_atom_trajectories(sample, center, ωr, ωz, error_options);
 
     if error_options["Doppler"]
         sigma_coeffs = [
@@ -300,7 +314,8 @@ function simulation(
 
     function __simulation(sample)
         H = GenerateHamiltonian(
-            sample .+ vcat(cfg.shift, [0.,0.,0.]),  
+            sample,
+            cfg.shift,
             ωr, ωz,
             cfg_t.error_options,
         

@@ -154,3 +154,5 @@ end
     @test real(expect(ket_1 ⊗ dagger(ket_1), ρ[end])) ≤ 1.0
     @test real(expect(ket_1 ⊗ dagger(ket_1), ρ[end])) ≥ 0.0
 end
+
+include("motion_regressions.jl")
