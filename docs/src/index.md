@@ -44,7 +44,7 @@ protocol of [Levine et al. (2019)](https://arxiv.org/abs/1908.06101).
 
 ## Start Here
 
-- Read [Examples](examples.md) for tutorial-style workflows using the current
+- Read [Examples](examples/index.md) for tutorial-style workflows using the current
   dict-based laser parameter API.
 - Use [API](library.md) for the exported functions and configuration types.
 

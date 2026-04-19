@@ -30,12 +30,13 @@ const σrl = ket_r ⊗ dagger(ket_l);
 
 const operators = [np, nr, σ1p, σp1, σpr, σrp];
 
-"""get_atom_trajectories(sample, ωr, ωz, err_optns)
+"""
+    get_atom_trajectories(sample, ωr, ωz, err_optns)
 
-    Construct position and velocity trajectories for one sampled atom.
+Construct position and velocity trajectories for one sampled atom.
 
-    The returned closures are used internally when assembling time-dependent
-    Hamiltonians for single- and two-atom simulations.
+The returned closures are used internally when assembling time-dependent
+Hamiltonians for single- and two-atom simulations.
 """
 @inline function get_atom_trajectories(
     sample::Vector{Float64}, 
@@ -68,24 +69,26 @@ const operators = [np, nr, σ1p, σp1, σpr, σrp];
     return X, Y, Z, Vx, Vy, Vz;
 end
 
-"""gauss_field(x, y, z, w0, z0; n0=1, θ0=0)
+"""
+    gauss_field(x, y, z, w0, z0; n0=1, θ0=0)
 
-    Return the normalized complex Gaussian field envelope used by the refactored
-    dict-based beam parameter API.
+Return the normalized complex Gaussian field envelope used by the refactored
+dict-based beam parameter API.
 
-    This is the Gaussian-beam specialization that `Ω` uses when
-    `laser_params["type"] == "gauss"`.
+This is the Gaussian-beam specialization that `Ω` uses when
+`laser_params["type"] == "gauss"`.
 """
 @inline function gauss_field(x, y, z, w0, z0; n0=1, θ0=0)
     return A(x, y, z, w0, z0; n=n0, θ=θ0) .* A_phase(x, y, z, w0, z0; θ=θ0)
 end;
 
-"""Ω(x, y, z, laser_params)
+"""
+    Ω(x, y, z, laser_params)
 
-    Return the position-dependent complex Rabi coupling for one excitation beam.
+Return the position-dependent complex Rabi coupling for one excitation beam.
 
-    Depending on `laser_params`, this helper evaluates either a Gaussian beam or one
-    of the simple flat-top beam parameterizations used by the package.
+Depending on `laser_params`, this helper evaluates either a Gaussian beam or one
+of the simple flat-top beam parameterizations used by the package.
 """
 @inline function Ω(x, y, z, laser_params) 
     if (laser_params["type"] == "gauss")
@@ -124,10 +127,11 @@ end;
         
 end;
 
-""" Δ(vx, vz, laser_params)
+"""
+    Δ(vx, vz, laser_params)
 
-    Return the single-photon Doppler shift induced by atomic motion for the red
-    laser.
+Return the single-photon Doppler shift induced by atomic motion for the first
+laser.
 """
 @inline function Δ(vx, vz, laser_params)
     w0, z0, θ =  laser_params["w0"], laser_params["z0"], laser_params["θ"] #laser_params[2:4]
@@ -136,10 +140,11 @@ end;
     return k * (sin(θ) * vx + cos(θ) * vz) #Δx + Δz
 end;
 
-"""δ(vx, vz, red_laser_params, blue_laser_params)
+"""
+    δ(vx, vz, red_laser_params, blue_laser_params)
 
-    Return the two-photon Doppler detuning induced by atomic motion for the red and
-    blue excitation beams.
+Return the two-photon Doppler detuning induced by atomic motion for the first and
+second excitation beams.
 """
 @inline function δ(vx, vz, first_laser_params, second_laser_params)
     wr0, zr0, θr = first_laser_params["w0"], first_laser_params["z0"], first_laser_params["θ"]  #first_laser_params[2:4];
@@ -154,11 +159,12 @@ end;
     return δx + δz
 end;
 
-"""JumpOperators(decay_params)
+"""
+    JumpOperators(decay_params)
 
-    Construct the Lindblad jump operators for the single-atom model.
+Construct the Lindblad jump operators for the single-atom model.
 
-    `decay_params` is ordered as `[Γ0, Γ1, Γl, Γr]`.
+`decay_params` is ordered as `[Γ0, Γ1, Γl, Γr]`.
 """
 @inline function JumpOperators(decay_params)
     Γ0, Γ1, Γl, Γr = decay_params;
@@ -166,15 +172,16 @@ end;
     return decay_operators
 end;
 
-"""GenerateHamiltonian(sample, ωr, ωz, error_options, laser_noise,
+"""
+    GenerateHamiltonian(sample, ωr, ωz, error_options, laser_noise,
         tspan_noise, f, red_laser_phase_amplitudes, blue_laser_phase_amplitudes,
         nodes, red_laser_params, blue_laser_params, Δ0, δ0)
 
-    Assemble the full time-dependent single-atom Hamiltonian for one Monte Carlo
-    sample.
+Assemble the full time-dependent single-atom Hamiltonian for one Monte Carlo
+sample.
 
-    This combines thermal motion, Doppler shifts, beam inhomogeneity, and optional
-    laser phase noise into the effective two-photon model.
+This combines thermal motion, Doppler shifts, beam inhomogeneity, and optional
+laser phase noise into the effective two-photon model.
 """
 @inline function GenerateHamiltonian(
     sample,     ωr, ωz,
@@ -231,27 +238,28 @@ end;
     return H
 end;
 
-""" simulation(cfg::RydbergConfig; temperature_calibrate=false, ode_kwargs...)
+"""
+    simulation(cfg::RydbergConfig; temperature_calibrate=false, ode_kwargs...)
 
-    Simulate single-atom two-photon Rydberg excitation and average over Monte Carlo
-    realizations.
+Simulate single-atom two-photon Rydberg excitation and average over Monte Carlo
+realizations.
 
-    The model combines the mechanisms emphasized in
-    [arXiv:1802.10424](https://arxiv.org/abs/1802.10424): finite-temperature atomic
-    motion and Doppler dephasing, spontaneous emission from the intermediate and
-    Rydberg states, and stochastic laser phase noise.
+The model combines the mechanisms emphasized in
+[arXiv:1802.10424](https://arxiv.org/abs/1802.10424): finite-temperature atomic
+motion and Doppler dephasing, spontaneous emission from the intermediate and
+Rydberg states, and stochastic laser phase noise.
 
-    # Arguments
-    - `cfg::RydbergConfig`: simulation configuration.
+# Arguments
+- `cfg::RydbergConfig`: simulation configuration.
 
-    # Keywords
-    - `temperature_calibrate = false`: if `true`, first adjust the ideal laser
-    parameters with `calibrate_two_photon`.
-    - `ode_kwargs...`: keyword arguments forwarded to
-    `timeevolution.master_dynamic`.
+# Keywords
+- `temperature_calibrate = false`: if `true`, first adjust the ideal laser
+  parameters with `calibrate_two_photon`.
+- `ode_kwargs...`: keyword arguments forwarded to
+  `timeevolution.master_dynamic`.
 
-    # Returns
-    - `(ρ, ρ2)`, the first and second moments of the density-matrix trajectory.
+# Returns
+- `(ρ, ρ2)`, the first and second moments of the density-matrix trajectory.
 """
 function simulation(
     cfg::RydbergConfig; 
@@ -335,17 +343,15 @@ function Ω_twophoton(Ωr, Ωb, Δ)
     return abs(Ωb * Ωr / (2.0 * Δ))
 end;
 
-#@doc doc
 """
     T_twophoton(Ωr, Ωb, Δ)
 
-    Return the effective two-photon Rabi period `2π / Ω_twophoton(Ωr, Ωb, Δ)`.
+Return the effective two-photon Rabi period `2π / Ω_twophoton(Ωr, Ωb, Δ)`.
 """
 function T_twophoton(Ωr, Ωb, Δ)
     return 2.0*π / Ω_twophoton(Ωr, Ωb, Δ)
 end;
 
-#@doc doc
 """
     δ_twophoton(Ωr, Ωb, Δ)
 
@@ -359,24 +365,24 @@ function δ_twophoton(Ωr, Ωb, Δ)
     return (abs(Ωr)^2 - abs(Ωb)^2)/(4.0 * Δ)
 end;
 
-#@doc doc
 """
     Ωr_required(Ω, Ωb, Δ)
 
-    Return the red-laser single-photon Rabi frequency needed to realize an effective
-    two-photon coupling `Ω` with blue-laser coupling `Ωb` and detuning `Δ`.
-""" 
+Return the red-laser single-photon Rabi frequency needed to realize an effective
+two-photon coupling `Ω` with blue-laser coupling `Ωb` and detuning `Δ`.
+"""
 function Ωr_required(Ω, Ωb, Δ)
     return 2.0 * Δ * Ω / abs(Ωb)
 end;
 
-"""calibrate_two_photon(cfg::RydbergConfig, n_samples=1000)
+"""
+    calibrate_two_photon(cfg::RydbergConfig, n_samples=1000)
 
-    Temperature-average the effective two-photon coupling and AC Stark shift, then
-    return a corrected copy of `cfg`.
+Temperature-average the effective two-photon coupling and AC Stark shift, then
+return a corrected copy of `cfg`.
 
-    This helper is useful when matching an ideal pulse design to a finite-temperature
-    ensemble before running `simulation`.
+This helper is useful when matching an ideal pulse design to a finite-temperature
+ensemble before running `simulation`.
 """
 function calibrate_two_photon(cfg::RydbergConfig, n_samples=1000)
     cfg_calibrated = deepcopy(cfg)

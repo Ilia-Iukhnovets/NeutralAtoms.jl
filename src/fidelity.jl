@@ -1,11 +1,12 @@
 
-"""get_fidelity_with_rz_phi(ρ, state, ϕ_rz)
+"""
+    get_fidelity_with_rz_phi(ρ, state, ϕ_rz)
 
-    Return the fidelity with a target state after applying a global two-qubit
-    `RZ(ϕ_rz) ⊗ RZ(ϕ_rz)` correction.
+Return the fidelity with a target state after applying a global two-qubit
+`RZ(ϕ_rz) ⊗ RZ(ϕ_rz)` correction.
 
-    This helper is used when calibrating the phase of the blockade-mediated CZ
-    sequence.
+This helper is used when calibrating the phase of the blockade-mediated CZ
+sequence.
 """
 function get_fidelity_with_rz_phi(ρ, state, ϕ_rz)
     ones = ket_1 ⊗ ket_1
@@ -16,13 +17,14 @@ function get_fidelity_with_rz_phi(ρ, state, ϕ_rz)
     return real(dagger(state_tr) * global_RZ(ϕ_rz) * ρ * dagger( global_RZ(ϕ_rz)) * state_tr)
 end
 
-"""CZ_calibration_by_fidelity_oscillation(cfg::CZLPConfig; ode_kwargs...)
+"""
+    CZ_calibration_by_fidelity_oscillation(cfg::CZLPConfig; ode_kwargs...)
 
-    Scan a global `RZ` phase and return the Bell-state fidelity curve used to
-    calibrate the CZ protocol.
+Scan a global `RZ` phase and return the Bell-state fidelity curve used to
+calibrate the CZ protocol.
 
-    # Returns
-    - `(ϕ_list, F_list, ϕ_opt)`, where `ϕ_opt` maximizes the fidelity proxy.
+# Returns
+- `(ϕ_list, F_list, ϕ_opt)`, where `ϕ_opt` maximizes the fidelity proxy.
 """
 function CZ_calibration_by_fidelity_oscillation(cfg::CZLPConfig; ode_kwargs...)
     cfg_parity = deepcopy(cfg)
@@ -43,10 +45,11 @@ function CZ_calibration_by_fidelity_oscillation(cfg::CZLPConfig; ode_kwargs...)
     return ϕ_list, F_list, ϕ_list[argmax(F_list)]
 end
 
-"""get_parity_osc(ρ, ϕ_cal)
+"""
+    get_parity_osc(ρ, ϕ_cal)
 
-    Compute the parity oscillation expected after applying the CZ sequence and the
-    phase correction `ϕ_cal`.
+Compute the parity oscillation expected after applying the CZ sequence and the
+phase correction `ϕ_cal`.
 """
 function get_parity_osc(ρ, ϕ_cal)
     S_ZZ = Z ⊗ Z;
@@ -72,13 +75,14 @@ basis_fidelity_states = [
     (ket_0 - 1.0im * ket_1)/sqrt(2)
     ]
 
-"""get_rydberg_fidelity_configs(cfg, n_samples=20)
+"""
+    get_rydberg_fidelity_configs(cfg, n_samples=20)
 
-    Construct a set of derived configurations used for single-atom error-budget
-    analysis.
+Construct a set of derived configurations used for single-atom error-budget
+analysis.
 
-    Each returned configuration isolates one decoherence mechanism or the combined
-    error budget.
+Each returned configuration isolates one decoherence mechanism or the combined
+error budget.
 """
 function get_rydberg_fidelity_configs(cfg, n_samples=20)
     configs = OrderedDict()
@@ -134,14 +138,15 @@ function get_rydberg_fidelity_configs(cfg, n_samples=20)
     return configs
 end 
 
-"""get_rydberg_infidelity(cfg::RydbergConfig; U=dense(identityoperator(basis)),
+"""
+    get_rydberg_infidelity(cfg::RydbergConfig; U=dense(identityoperator(basis)),
         states=basis_fidelity_states, n_samples=100, ode_kwargs...)
 
-    Estimate a single-atom gate infidelity budget by averaging over input states and
-    error channels.
+Estimate a single-atom gate infidelity budget by averaging over input states and
+error channels.
 
-    The returned dictionary separates motion, laser noise, spontaneous decay, and
-    total error contributions for the effective two-photon model.
+The returned dictionary separates motion, laser noise, spontaneous decay, and
+total error contributions for the effective two-photon model.
 """
 function get_rydberg_infidelity(
     cfg::RydbergConfig;
@@ -173,11 +178,12 @@ function get_rydberg_infidelity(
     return infidelities
 end
 
-"""get_cz_infidelity(cfg::CZLPConfig; n_samples=1, ode_kwargs...)
+"""
+    get_cz_infidelity(cfg::CZLPConfig; n_samples=1, ode_kwargs...)
 
-    Estimate a CZ-gate infidelity budget using the parity-calibration workflow.
+Estimate a CZ-gate infidelity budget using the parity-calibration workflow.
 
-    The result separates calibration error from the remaining decoherence channels.
+The result separates calibration error from the remaining decoherence channels.
 """
 function get_cz_infidelity(
     cfg::CZLPConfig;

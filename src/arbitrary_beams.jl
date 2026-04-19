@@ -31,10 +31,11 @@ end
     return exp.(-x.^2 ./ w.^2) .* Hn.(2^0.5 .* x ./ w ) #./ norm
 end
 
-"""LG_coeff(k, n)
+"""
+    LG_coeff(k, n)
 
-    Return the coefficient multiplying the `k`th Laguerre-Gauss term in the simple
-    flat-top expansion of order `n`.
+Return the coefficient multiplying the `k`th Laguerre-Gauss term in the simple
+flat-top expansion of order `n`.
 """
 function LG_coeff(k,n)
     res = 0.0
@@ -44,10 +45,11 @@ function LG_coeff(k,n)
     return (-1.0)^k * res / factorial(k)
 end
 
-""" HG_coeff(k, n)
+"""
+    HG_coeff(k, n)
 
-    Return the coefficient multiplying the `k`th Hermite-Gauss term in the simple
-    flat-top expansion of order `n`.
+Return the coefficient multiplying the `k`th Hermite-Gauss term in the simple
+flat-top expansion of order `n`.
 """
 function HG_coeff(k,n)
     res = 0.0
@@ -66,10 +68,11 @@ function HG_coeff(k,n)
     return res
 end 
 
-""" HG_coefficients(p, q)
+"""
+    HG_coefficients(p, q)
 
-    Return the coefficient matrix used by the separable Hermite-Gauss flat-top
-    construction.
+Return the coefficient matrix used by the separable Hermite-Gauss flat-top
+construction.
 """
 function HG_coefficients(p,q)
     c = zeros(p+1,q+1)
@@ -84,13 +87,14 @@ function HG_coefficients(p,q)
     return c
 end
 
-""" simple_flattopHG_field(x, y, z, laser_params)
+"""
+    simple_flattopHG_field(x, y, z, laser_params)
 
-    Return the complex field amplitude of the package's simple Hermite-Gauss
-    flat-top beam model.
+Return the complex field amplitude of the package's simple Hermite-Gauss
+flat-top beam model.
 
-    This helper is used by `Ω` when the blue excitation beam is described by a
-    Hermite-Gauss superposition instead of a single Gaussian mode.
+This helper is used by `Ω` when the blue excitation beam is described by a
+Hermite-Gauss superposition instead of a single Gaussian mode.
 """
 function simple_flattopHG_field(x,y,z,laser_params)
     Ω, w0, zr, θ, n, m, sqz = laser_params; 
@@ -112,10 +116,11 @@ function simple_flattopHG_field(x,y,z,laser_params)
     return Ω .* w0 .* E_sum ./ w .* exp.(-1.0im * phase0) 
 end;
 
-"""simple_flattopLG_field(x, y, z, laser_params)
+"""
+    simple_flattopLG_field(x, y, z, laser_params)
 
-    Return the complex field amplitude of the package's simple Laguerre-Gauss
-    flat-top beam model.
+Return the complex field amplitude of the package's simple Laguerre-Gauss
+flat-top beam model.
 """
 function simple_flattopLG_field(x,y,z,laser_params)
     Ω, w0, zr, θ, l = laser_params; #Ω, w0, zr, θ, l, m = laser_params;
@@ -131,11 +136,12 @@ function simple_flattopLG_field(x,y,z,laser_params)
     return Ω .* w0 ./ w .* exp.(-1.0im * phase0) * E_sum
 end
 
-"""decomposition_HG_2d(x, y, F, w, dx, dy; n_max=20, m_max=20)
+"""
+    decomposition_HG_2d(x, y, F, w, dx, dy; n_max=20, m_max=20)
 
-    Decompose a sampled two-dimensional field profile into a Hermite-Gauss basis.
+Decompose a sampled two-dimensional field profile into a Hermite-Gauss basis.
 
-    The returned coefficient matrix can be passed to `reconstruct_HG_field_2d`.
+The returned coefficient matrix can be passed to `reconstruct_HG_field_2d`.
 """
 function decomposition_HG_2d(x::Vector{Float64}, y::Vector{Float64}, F::Vector{Float64},
                          w::Float64, dx::Float64, dy::Float64; n_max=20, m_max=20)
@@ -149,12 +155,13 @@ function decomposition_HG_2d(x::Vector{Float64}, y::Vector{Float64}, F::Vector{F
     return c
 end
 
-"""reconstruct_HG_field_2d(x, y, z, Ω_w_z, c_xy)
+"""
+    reconstruct_HG_field_2d(x, y, z, Ω_w_z, c_xy)
 
-    Reconstruct a complex Hermite-Gauss beam field from its coefficient matrix
-    `c_xy` at point `(x, y, z)`.
+Reconstruct a complex Hermite-Gauss beam field from its coefficient matrix
+`c_xy` at point `(x, y, z)`.
 
-    `Ω_w_z` is expected to contain `[Ω, w0, z0]`.
+`Ω_w_z` is expected to contain `[Ω, w0, z0]`.
 """
 function reconstruct_HG_field_2d(x::Float64,y::Float64,z::Float64, Ω_w_z::Vector{Float64}, c_xy::Matrix{Float64}) 
     #laser_params::Dict{String, Any}) ## cy::Vector{Float64}

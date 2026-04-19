@@ -1,6 +1,7 @@
-"""JumpOperatorsTwo(decay_params)
+"""
+    JumpOperatorsTwo(decay_params)
 
-    Construct the Lindblad jump operators for the two-atom CZ model.
+Construct the Lindblad jump operators for the two-atom CZ model.
 """
 @inline function JumpOperatorsTwo(decay_params)
     Γ0, Γ1, Γl, Γr = decay_params;
@@ -11,11 +12,12 @@
     return operators
 end;
 
-"""get_V(sample1, sample2, ωr, ωz, error_options, c6, eps=1e-18)
+"""
+    get_V(sample1, sample2, ωr, ωz, error_options, c6, eps=1e-18)
 
-    Return the blockade interaction `V(t)` between two sampled atoms.
+Return the blockade interaction `V(t)` between two sampled atoms.
 
-    The interaction follows the van der Waals scaling `c6 / R(t)^6`.
+The interaction follows the van der Waals scaling `c6 / R(t)^6`.
 """
 @inline function get_V(sample1, sample2,  ωr, ωz, err_optns, c6, eps=1e-18)
     X1, Y1, Z1 = get_atom_trajectories(sample1, ωr, ωz, err_optns)[1:3]
@@ -24,13 +26,14 @@ end;
     return V
 end
 
-"""GenerateHamiltonianTwo(sample1, sample2, ωr, ωz, free_motion, atom_motion,
+"""
+    GenerateHamiltonianTwo(sample1, sample2, ωr, ωz, free_motion, atom_motion,
         tspan_noise, f, nodes, red_laser_phase_amplitudes,
         blue_laser_phase_amplitudes, red_laser_params, blue_laser_params, ϕr,
         ϕb, Δ0, δ0, c6)
 
-    Assemble the time-dependent two-atom Hamiltonian for the blockade-mediated CZ
-    simulation.
+Assemble the time-dependent two-atom Hamiltonian for the blockade-mediated CZ
+simulation.
 """
 @inline function GenerateHamiltonianTwo(
     sample1, sample2,
@@ -93,14 +96,15 @@ end
     return H
 end;
 
-"""get_blockade_stark_shift_factor(trap_params, atom_params, atom_centers, Ω,
+"""
+    get_blockade_stark_shift_factor(trap_params, atom_params, atom_centers, Ω,
         c6, n_samples=10000)
 
-    Estimate the finite-temperature blockade correction used when calibrating the
-    CZ pulse.
+Estimate the finite-temperature blockade correction used when calibrating the
+CZ pulse.
 
-    This helper averages the inverse sixth power of the atom separation over thermal
-    sampling and returns the resulting Stark-shift factor.
+This helper averages the inverse sixth power of the atom separation over thermal
+sampling and returns the resulting Stark-shift factor.
 """
 function get_blockade_stark_shift_factor(
     trap_params,
@@ -131,25 +135,26 @@ function get_blockade_stark_shift_factor(
     return - Ω / (2.0 * c6 * Rm6)
 end
 
-"""simulation_czlp(cfg::CZLPConfig; ode_kwargs...)
+"""
+    simulation_czlp(cfg::CZLPConfig; ode_kwargs...)
 
-    Simulate the two-atom global-pulse controlled-phase protocol.
+Simulate the two-atom global-pulse controlled-phase protocol.
 
-    The model follows the blockade-based CZ logic highlighted in
-    [arXiv:1908.06101](https://arxiv.org/abs/1908.06101): two global Rydberg pulses,
-    an inter-pulse phase step `ξ`, finite-temperature motion, and optional laser
-    noise and spontaneous decay.
+The model follows the blockade-based CZ logic highlighted in
+[arXiv:1908.06101](https://arxiv.org/abs/1908.06101): two global Rydberg pulses,
+an inter-pulse phase step `ξ`, finite-temperature motion, and optional laser
+noise and spontaneous decay.
 
-    # Arguments
-    - `cfg::CZLPConfig`: two-atom phase-gate configuration.
+# Arguments
+- `cfg::CZLPConfig`: two-atom phase-gate configuration.
 
-    # Keywords
-    - `ode_kwargs...`: keyword arguments forwarded to
-    `timeevolution.master_dynamic`.
+# Keywords
+- `ode_kwargs...`: keyword arguments forwarded to
+  `timeevolution.master_dynamic`.
 
-    # Returns
-    - `(ρ, ρ2)`, the first and second moments of the two-atom density-matrix
-    trajectory.
+# Returns
+- `(ρ, ρ2)`, the first and second moments of the two-atom density-matrix
+  trajectory.
 """
 function simulation_czlp(
     cfg::CZLPConfig;

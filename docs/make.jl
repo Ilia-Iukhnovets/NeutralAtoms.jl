@@ -17,7 +17,12 @@ makedocs(
     authors="M.Y. Goloshchapov",
     pages = [
         "Home" => "index.md",
-        "Examples" => "examples.md",
+        "Examples" => [
+            "Overview" => "examples/index.md",
+            "Release And Recapture" => "examples/release_recapture.md",
+            "Single-Atom Two-Photon Rydberg Dynamics" => "examples/single_atom_rydberg.md",
+            "Two-Qubit Blockade Simulation" => "examples/two_qubit_cz.md",
+        ],
         "API" => "library.md"
     ]
     )

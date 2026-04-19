@@ -1,9 +1,10 @@
-"""get_gate(U)
+"""
+    get_gate(U)
 
-    Embed a `2 × 2` qubit unitary `U` into the five-level single-atom basis.
+Embed a `2 × 2` qubit unitary `U` into the five-level single-atom basis.
 
-    Only the computational subspace spanned by `ket_0` and `ket_1` is modified; the
-    other levels are left unchanged.
+Only the computational subspace spanned by `ket_0` and `ket_1` is modified; the
+other levels are left unchanged.
 """
 function get_gate(U)
     op = dense(identityoperator(basis))
@@ -11,17 +12,18 @@ function get_gate(U)
     return op
 end
 
-"""project_on_qubit(ρ, n=1)
+"""
+    project_on_qubit(ρ, n=1)
 
-    Project a one- or two-atom density operator onto the computational qubit
-    subspace.
+Project a one- or two-atom density operator onto the computational qubit
+subspace.
 
-    # Arguments
-    - `ρ`: density operator in the five-level basis.
-    - `n = 1`: number of atoms to project.
+# Arguments
+- `ρ`: density operator in the five-level basis.
+- `n = 1`: number of atoms to project.
 
-    # Returns
-    - Density operator restricted to the `|0⟩, |1⟩` subspace for each atom.
+# Returns
+- Density operator restricted to the `|0⟩, |1⟩` subspace for each atom.
 """
 function project_on_qubit(ρ, n=1)
     basis_sub = SubspaceBasis(basis, [ket_0, ket_1])
@@ -61,4 +63,3 @@ RZ = θ -> get_gate(Matrix{ComplexF64}([
 #     0 0 1 0;
 #     0 0 0 -1;
 # ])
-
