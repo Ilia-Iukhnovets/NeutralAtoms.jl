@@ -131,6 +131,12 @@ function simple_flattopLG_field(x,y,z,laser_params)
     return Ω .* w0 ./ w .* exp.(-1.0im * phase0) * E_sum
 end
 
+"""decomposition_HG_2d(x, y, F, w, dx, dy; n_max=20, m_max=20)
+
+    Decompose a sampled two-dimensional field profile into a Hermite-Gauss basis.
+
+    The returned coefficient matrix can be passed to `reconstruct_HG_field_2d`.
+"""
 function decomposition_HG_2d(x::Vector{Float64}, y::Vector{Float64}, F::Vector{Float64},
                          w::Float64, dx::Float64, dy::Float64; n_max=20, m_max=20)
     c = zeros(n_max+1, m_max+1); #m_max
@@ -143,6 +149,13 @@ function decomposition_HG_2d(x::Vector{Float64}, y::Vector{Float64}, F::Vector{F
     return c
 end
 
+"""reconstruct_HG_field_2d(x, y, z, Ω_w_z, c_xy)
+
+    Reconstruct a complex Hermite-Gauss beam field from its coefficient matrix
+    `c_xy` at point `(x, y, z)`.
+
+    `Ω_w_z` is expected to contain `[Ω, w0, z0]`.
+"""
 function reconstruct_HG_field_2d(x::Float64,y::Float64,z::Float64, Ω_w_z::Vector{Float64}, c_xy::Matrix{Float64}) 
     #laser_params::Dict{String, Any}) ## cy::Vector{Float64}
     #c_xy = laser_params["coeffs_xy"]
@@ -174,4 +187,4 @@ function reconstruct_HG_field_2d(x::Float64,y::Float64,z::Float64, Ω_w_z::Vecto
 end;
 
 #function decomposition_IG(x::Vector{Float64}, y::Vector{Float64}, F::Vector{Float64}, w::Float64, dx::Float64, dy::Float64; n_max=20, m_max=20)
-#function reconstruct_IG_field(x::Float64,y::Float64,z::Float64, Ω_w_z::Vector{Float64}, coeffs::Matrix{Float64}) 
+#function reconstruct_IG_field(x::Float64,y::Float64,z::Float64, Ω_w_z::Vector{Float64}, coeffs::Matrix{Float64})

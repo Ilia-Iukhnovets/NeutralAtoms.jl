@@ -6,27 +6,25 @@ function w(z, w0, z0)
     return w0 .* sqrt.(1.0 .+ (z ./z0) .^2);
 end;
 
-@doc doc"""
+"""
     w0_to_z0(w0, λ, M2=1.0)
 
-    Return the Rayleigh length associated with a beam waist `w0`.
+Return the Rayleigh length associated with a beam waist `w0`.
 
-    The conversion is
+The conversion is
 
-    ```math
-    z_0 = \frac{pi w_0^2}{lambda M^2}.
-    ```
+```math
+z_0 = \\frac{\\pi w_0^2}{\\lambda M^2}.
+```
 
-    # Arguments
-    - `w0`: beam waist radius in `μm`.
-    - `λ`: beam wavelength in `μm`.
-    - `M2 = 1.0`: beam-quality factor. `M2 = 1` corresponds to an ideal Gaussian
-    beam.
+# Arguments
+- `w0`: beam waist radius in `μm`.
+- `λ`: beam wavelength in `μm`.
+- `M2 = 1.0`: beam-quality factor. `M2 = 1` corresponds to an ideal Gaussian beam.
 
-    # Returns
-    - Rayleigh length in `μm`.
+# Returns
+- Rayleigh length in `μm`.
 """
-
 function w0_to_z0(w0, λ, M2=1.0)
     return π*w0^2/λ / M2;
 end;
@@ -213,22 +211,22 @@ end
     in `μm`.
     - `n_samples::Int64`: number of Monte Carlo trajectories to average.
     - `f::Vector{Float64}`: phase-noise frequency grid in `MHz`.
-    - `red_laser_phase_amplitudes::Vector{Float64}`: Fourier amplitudes for the
-    red-laser phase-noise trace.
-    - `blue_laser_phase_amplitudes::Vector{Float64}`: Fourier amplitudes for the
-    blue-laser phase-noise trace.
-    - `red_laser_params::Vector{Float64}`: red-laser coupling and beam parameters.
-    - `blue_laser_params::Vector{Float64}`: blue-laser coupling and beam parameters.
+    - `first_laser_phase_amplitudes::Vector{Float64}`: Fourier amplitudes for the
+    first-laser phase-noise trace.
+    - `second_laser_phase_amplitudes::Vector{Float64}`: Fourier amplitudes for the
+    second-laser phase-noise trace.
+    - `first_laser_params::Dict{String, Any}`: dict-based description of the first
+    laser beam and coupling.
+    - `second_laser_params::Dict{String, Any}`: dict-based description of the second
+    laser beam and coupling.
+    - `shift::Vector{Float64}`: static spatial shift applied to the sampled atom
+    position before simulation.
     - `detuning_params::Vector{Float64}`: `[Δ0, δ0]` single- and two-photon
     detunings in angular-frequency units.
     - `decay_params::Vector{Float64}`: spontaneous decay rates from the intermediate
     and Rydberg states.
-    - `atom_motion::Bool`: whether to include finite-temperature atom motion.
-    - `free_motion::Bool`: whether atoms move ballistically instead of in the trap.
-    - `laser_noise::Bool`: whether to sample stochastic laser phase noise.
-    - `spontaneous_decay_intermediate::Bool`: whether to include intermediate-state
-    decay channels.
-    - `spontaneous_decay_rydberg::Bool`: whether to include Rydberg-state decay.
+    - `error_options::Dict{String, Any}`: switches controlling motion, Doppler
+    shifts, phase noise, and spontaneous-decay channels.
 """
 mutable struct RydbergConfig
     tspan::Vector{Float64}
@@ -268,11 +266,9 @@ end
 
     # Fields
     - `tspan`, `ψ0`, `atom_params`, `trap_params`, `n_samples`, `f`,
-    `red_laser_phase_amplitudes`, `blue_laser_phase_amplitudes`,
-    `red_laser_params`, `blue_laser_params`, `detuning_params`, `decay_params`,
-    `atom_motion`, `free_motion`, `laser_noise`,
-    `spontaneous_decay_intermediate`, `spontaneous_decay_rydberg`: same meaning as
-    in `RydbergConfig`.
+    `first_laser_phase_amplitudes`, `second_laser_phase_amplitudes`,
+    `first_laser_params`, `second_laser_params`, `detuning_params`,
+    `decay_params`, `error_options`: same meaning as in `RydbergConfig`.
     - `atom_centers::Vector{Vector{Float64}}`: equilibrium positions of the two
     traps in `μm`.
     - `c6::Float64`: van der Waals interaction coefficient used for blockade.

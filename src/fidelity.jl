@@ -1,4 +1,12 @@
 
+"""get_fidelity_with_rz_phi(ρ, state, ϕ_rz)
+
+    Return the fidelity with a target state after applying a global two-qubit
+    `RZ(ϕ_rz) ⊗ RZ(ϕ_rz)` correction.
+
+    This helper is used when calibrating the phase of the blockade-mediated CZ
+    sequence.
+"""
 function get_fidelity_with_rz_phi(ρ, state, ϕ_rz)
     ones = ket_1 ⊗ ket_1
     CZ = Id ⊗ Id - 2*(ones ⊗ dagger(ones));
@@ -35,7 +43,7 @@ function CZ_calibration_by_fidelity_oscillation(cfg::CZLPConfig; ode_kwargs...)
     return ϕ_list, F_list, ϕ_list[argmax(F_list)]
 end
 
-"""get_parity_osc(cfg::CZLPConfig, ϕ_cal; ode_kwargs...)
+"""get_parity_osc(ρ, ϕ_cal)
 
     Compute the parity oscillation expected after applying the CZ sequence and the
     phase correction `ϕ_cal`.
@@ -50,7 +58,7 @@ function get_parity_osc(ρ, ϕ_cal)
     θ = ϕ_cal; # - cfg_parity.ϕ_RZ + ϕ_cal - π
     U = a -> global_RX(π/2) * global_RZ(a) * global_RX(5*π/4)
 
-    Par_list = [real(expect(S_ZZ , U(ϕ) * (θ) * ρ * dagger(U(ϕ) * global_RZ(θ)) ) ) for ϕ in ϕ_list];
+    Par_list = [real(expect(S_ZZ, U(ϕ) * global_RZ(θ) * ρ * dagger(U(ϕ) * global_RZ(θ)))) for ϕ in ϕ_list];
     #use plot(ϕ_list, Par_list) in notebook 
     return ϕ_list, Par_list 
 end 
@@ -192,7 +200,7 @@ function get_cz_infidelity(
     cfg_t.n_samples                         = 1
 
     println("Measuring intermediate state probability...")
-    ϕ_RZ = get_parity_fidelity(cfg_t)[3];
+    ϕ_RZ = CZ_calibration_by_fidelity_oscillation(cfg_t)[3];
     global_RZ = RZ(ϕ_RZ) ⊗ RZ(ϕ_RZ);
 
     cfg_t.ψ0 = ket_pos ⊗ ket_pos

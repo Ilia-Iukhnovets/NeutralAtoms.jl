@@ -68,6 +68,14 @@ const operators = [np, nr, σ1p, σp1, σpr, σrp];
     return X, Y, Z, Vx, Vy, Vz;
 end
 
+"""gauss_field(x, y, z, w0, z0; n0=1, θ0=0)
+
+    Return the normalized complex Gaussian field envelope used by the refactored
+    dict-based beam parameter API.
+
+    This is the Gaussian-beam specialization that `Ω` uses when
+    `laser_params["type"] == "gauss"`.
+"""
 @inline function gauss_field(x, y, z, w0, z0; n0=1, θ0=0)
     return A(x, y, z, w0, z0; n=n0, θ=θ0) .* A_phase(x, y, z, w0, z0; θ=θ0)
 end;
@@ -314,14 +322,14 @@ function simulation(
 end;
 
 
-@doc doc"""
+"""
     Ω_twophoton(Ωr, Ωb, Δ)
 
-    Return the effective two-photon Rabi frequency
+Return the effective two-photon Rabi frequency
 
-    ```math
-    \Omega_{\mathrm{2ph}} = \left| \frac{\Omega_r \Omega_b}{2 \Delta} \right|.
-    ```
+```math
+\\Omega_{\\mathrm{2ph}} = \\left| \\frac{\\Omega_r \\Omega_b}{2 \\Delta} \\right|.
+```
 """
 function Ω_twophoton(Ωr, Ωb, Δ)
     return abs(Ωb * Ωr / (2.0 * Δ))
@@ -341,14 +349,12 @@ end;
 """
     δ_twophoton(Ωr, Ωb, Δ)
 
-    Return the differential AC Stark shift of the effective two-photon transition:
+Return the differential AC Stark shift of the effective two-photon transition:
 
-    ```math
-    """
-    #\delta_{\mathrm{2ph}} = \frac{|\Omega_r|^2 - |\Omega_b|^2}{4 \Delta}.
-    """
-    ```
-""" 
+```math
+\\delta_{\\mathrm{2ph}} = \\frac{|\\Omega_r|^2 - |\\Omega_b|^2}{4 \\Delta}.
+```
+"""
 function δ_twophoton(Ωr, Ωb, Δ)
     return (abs(Ωr)^2 - abs(Ωb)^2)/(4.0 * Δ)
 end;
@@ -374,8 +380,8 @@ end;
 """
 function calibrate_two_photon(cfg::RydbergConfig, n_samples=1000)
     cfg_calibrated = deepcopy(cfg)
-    Ωr = cfg.first_laser_params[1]
-    Ωb = cfg.second_laser_params[1]
+    Ωr = cfg.first_laser_params["Ω"]
+    Ωb = cfg.second_laser_params["Ω"]
 
     samples = samples_generate(cfg.trap_params, cfg.atom_params, n_samples)[1]
 
@@ -383,8 +389,8 @@ function calibrate_two_photon(cfg::RydbergConfig, n_samples=1000)
     samples_Ω2 = [Ω_twophoton(Ω(x, y, z, cfg_calibrated.first_laser_params), Ω(x, y, z, cfg_calibrated.second_laser_params), Δ(vx, vz, cfg_calibrated.first_laser_params)) for (x, y, z, vx, _, vz) in samples]
     factor_Ω2 = sqrt((sum(samples_Ω2) / length(samples)) / Ω_twophoton(Ωr, Ωb, cfg.detuning_params[1]))
     Ωr_cor, Ωb_cor = Ωr / factor_Ω2, Ωb / factor_Ω2
-    cfg_calibrated.first_laser_params[1]  = Ωr_cor
-    cfg_calibrated.second_laser_params[1] = Ωb_cor
+    cfg_calibrated.first_laser_params["Ω"]  = Ωr_cor
+    cfg_calibrated.second_laser_params["Ω"] = Ωb_cor
 
     # Correct resonance detuning to match temperature averaged AC Stark shifts
     samples_δ = [δ_twophoton(Ω(x, y, z, cfg_calibrated.first_laser_params), Ω(x, y, z, cfg_calibrated.second_laser_params), Δ(vx, vz, cfg_calibrated.first_laser_params)) for (x, y, z, vx, _, vz) in samples]

@@ -32,7 +32,7 @@ export
 
     w0_to_z0, trap_frequencies, E, I,
     release_recapture,
-    samples_generate, R, V, get_trap_params, H, samples_visualise,
+    samples_generate, R, V, get_trap_params, H,
     Sϕ, ϕ_amplitudes, ϕ,
     Ω_twophoton, T_twophoton, δ_twophoton, Ωr_required, 
     ket_0, ket_1, ket_r, ket_p, ket_l,
