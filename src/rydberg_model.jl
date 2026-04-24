@@ -135,7 +135,6 @@ of the simple flat-top beam parameterizations used by the package.
     else
         throw(error("Unsupported type of beam"))
     end;
-        #elseif (laser_params["type"] == "flattop")
         
 end;
 
@@ -354,8 +353,8 @@ Return the effective two-photon Rabi frequency
 \\Omega_{\\mathrm{2ph}} = \\left| \\frac{\\Omega_r \\Omega_b}{2 \\Delta} \\right|.
 ```
 """
-function Ω_twophoton(Ωr, Ωb, Δ)
-    return abs(Ωb * Ωr / (2.0 * Δ))
+function Ω_twophoton(Ω1, Ω2, Δ)
+    return abs(Ω1 * Ω2 / (2.0 * Δ))
 end;
 
 """
@@ -363,8 +362,8 @@ end;
 
 Return the effective two-photon Rabi period `2π / Ω_twophoton(Ωr, Ωb, Δ)`.
 """
-function T_twophoton(Ωr, Ωb, Δ)
-    return 2.0*π / Ω_twophoton(Ωr, Ωb, Δ)
+function T_twophoton(Ω1, Ω2, Δ)
+    return 2.0*π / Ω_twophoton(Ω1, Ω2, Δ)
 end;
 
 """
@@ -376,8 +375,8 @@ Return the differential AC Stark shift of the effective two-photon transition:
 \\delta_{\\mathrm{2ph}} = \\frac{|\\Omega_r|^2 - |\\Omega_b|^2}{4 \\Delta}.
 ```
 """
-function δ_twophoton(Ωr, Ωb, Δ)
-    return (abs(Ωr)^2 - abs(Ωb)^2)/(4.0 * Δ)
+function δ_twophoton(Ω1, Ω2, Δ)
+    return (abs(Ω1)^2 - abs(Ω2)^2)/(4.0 * Δ)
 end;
 
 """

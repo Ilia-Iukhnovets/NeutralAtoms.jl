@@ -2,11 +2,16 @@ using NeutralAtoms
 using QuantumOptics
 using Serialization
 
-
 function get_6P_config()
-       # Atom params
-       m = 86.9091835;     
-       T = 70.0;
+       ΔtoΩ = 0.377371
+       Ωτ = 4.29268
+       ξ = 3.90242  #3.9564
+       return _get_6P_config(ΔtoΩ, Ωτ, ξ)
+end
+
+function _get_6P_config(ΔtoΩ, Ωτ, ξ)
+       m = 86.9091835;            # Atom params
+       T = 70.0 # 70.0;
        atom_params = [m, T];
        # Trap params
        U0 = 800.0*0.65; #max * эффективность использования
@@ -32,19 +37,20 @@ function get_6P_config()
        ### Excitation beam parameters
        λ1 = 0.42;
        λ2 = 1.012;
-       w1 = 8.0;
+       w1 = 15.0 #8.0;
        w2 = 20.0;
        z1 = w0_to_z0(w1, λ1);
        z2 = w0_to_z0(w2, λ2);
 
-       Δ0 = 2.0*π * 800 #2000.0;
-       Ω = 2π * 2.3;
-       Ω1 = sqrt(2* Δ0 * Ω);
-       Ω2 = sqrt(2* Δ0 * Ω);
+       Δ0 = 2.0*π * 2000.0  # 2000 
+       Ω = 2π * 2.36  # 2.38
+       a = 1 #*sqrt(7) # ξ = 3.9564
+       Ω1 = a * sqrt(2* Δ0 * Ω);
+       Ω2 = 1/a * sqrt(2* Δ0 * Ω);
+
        # Orientation and flat-top param, n=1 - gauss
-       # θr = π/2;
-       θ1 = 0.0;
-       θ2 = π;
+       θ1 = π/2 #0.0;
+       θ2 = -π/2 #π;
        n1 = 1;
        n2 = 1;
 
@@ -61,7 +67,7 @@ function get_6P_config()
        τr = 445.0; #from arc getStateLifetime: n3=74, l3=0, j3=0.5 
        Γr = 1/τr;
        decay_params = [Γ0, Γ1, Γl, Γr];
-
+       
        # Simulation params
        T0 = 2.5 #T_twophoton(Ω1, Ω2, Δ0)
        tspan = [0.0:T0/200:T0;];
@@ -99,17 +105,20 @@ function get_6P_config()
               decay_params,
 
               error_options
-       );
-
+              );
+ 
        d = 2.7;
-       atom_centers = [[0.0, 0.0, -0.5*d], [0.0, 0.0, 0.5*d]]
-       c6 = 2π * 135298 #узнать для n=74
-       ΔtoΩ = 0.377371
-       Ωτ = 4.29268
-       ξ = 3.90242
-       ket_pos = (ket_0 + ket_1)/sqrt(2)
-       ψ0_cz = ket_pos ⊗ ket_pos 
 
+       #atom_centers = [[0.0, 0.0, -0.5*d], [0.0, 0.0, 0.5*d]]
+       atom_centers = [[-0.5*d, 0.0, 0.0 ], [0.5*d, 0.0, 0.0]]
+
+       c6 = 2π * 135298 #узнать для n=74
+       #ΔtoΩ = 0.377371
+       #Ωτ = 4.29268
+       #ξ = 3.9564 # 3.90242
+       ket_pos = (ket_0 + ket_1)/sqrt(2)
+       ψ0_cz = ket_pos ⊗ ket_pos
+       
        Ω_twophoton = (2π/T_twophoton(Ω1, Ω2, Δ0))
        τ = 2π / (Ω_twophoton * sqrt(ΔtoΩ^2 + 2.0))
        VV = c6 / d^6 #3.4^6 #       Ω_twophoton / 2 / V
@@ -119,7 +128,7 @@ function get_6P_config()
        ϕ2 = 2*τ * ΔtoΩ * Ω_twophoton;
        ϕ1 = (ϕ2 - π)/2  
        tspan_cz = [0.0, 2*τ];
-
+       
        cfg_czlp = NeutralAtoms.CZLPConfig(
               tspan_cz,
               ψ0_cz,

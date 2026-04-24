@@ -97,8 +97,8 @@ function get_default_configs()
                         "spontaneous_decay_rydberg" => true,
                         "atom_motion" => true,
                         "free_motion" => true,
-                        "xy_osc" => true,
-                        "z_osc" => true,
+                        "xy_motion" => true,
+                        "z_motion" => true,
                         "Doppler" => true
                         )
        shift = [0.0,0.0,0.0]
@@ -214,7 +214,7 @@ function get_default_cxy()
        y_0 = [-y_span/2 : y_span/(len_y-1) : y_span/2;];
 
        w = 2. ;
-       cxy = NeutralAtoms.decomposition_2d(xx, yy, zz, w,dx,dy);
+       cxy = NeutralAtoms.decomposition_HG_2d(xx, yy, zz, w,dx,dy);
        c_xy = 1.05 * cxy; # renormalization
        return c_xy
 end
@@ -227,7 +227,7 @@ function get_ideal_cxy()
        m=trunc(Int,M/2)
        for j in 0:n
               for i in 0:m
-                     c_xy[2*i+1,2*j+1] = NeutralAtoms.HG_coeff_big(j,n) * NeutralAtoms.HG_coeff_big(i,m) #for i in 1:(N+1)
+                     c_xy[2*i+1,2*j+1] = NeutralAtoms.HG_coeff(j,n) * NeutralAtoms.HG_coeff(i,m) #for i in 1:(N+1)
               end
        end
        return c_xy 

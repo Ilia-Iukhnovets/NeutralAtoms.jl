@@ -137,6 +137,40 @@ function get_blockade_stark_shift_factor(
     return - Ω / (2.0 * c6 * Rm6)
 end
 
+function pure_simulation_czlp(cfg::CZLPConfig;ode_kwargs...)
+    # Generate thermal offsets around each atom center.
+    samples12 = samples_generate(cfg.trap_params,cfg.atom_params,2;harmonic=true)[1]
+    
+    # Unpack all parameters
+    ωr, ωz = trap_frequencies(cfg.atom_params, cfg.trap_params);
+    Δ0, δ0 = cfg.detuning_params;
+    τ = cfg.tspan[end] / 2.0;
+
+    tspan_noise = [0.0:cfg.tspan[end]/1000:cfg.tspan[end];];
+    nodes = (tspan_noise, );
+    first_laser_phase_amplitudes  = cfg.error_options["laser_noise"] ? cfg.first_laser_phase_amplitudes  : zero(cfg.first_laser_phase_amplitudes);
+    second_laser_phase_amplitudes = cfg.error_options["laser_noise"] ? cfg.second_laser_phase_amplitudes : zero(cfg.second_laser_phase_amplitudes);
+    ϕ_sec = t -> 0.0;
+    ϕ_first = t -> t < τ ? 0.0 : cfg.ξ;
+
+    ψ0  = cfg.ψ0 
+    #Density matrix averaged over realizations of laser noise and atom dynamics.
+    ψt  = [zero(ψ0) for _ in 1:length(cfg.tspan)];
+
+    H = GenerateHamiltonianTwo(samples12[1], samples12[2],
+            cfg.atom_centers[1], cfg.atom_centers[2],
+            ωr, ωz, cfg.error_options, tspan_noise, cfg.f, nodes,
+            first_laser_phase_amplitudes, second_laser_phase_amplitudes,
+            cfg.first_laser_params, cfg.second_laser_params,
+            ϕ_first, ϕ_sec, Δ0, δ0, cfg.c6)
+
+    #if  !(cfg.error_options["spontaneous_decay_rydberg"]) & !(cfg.error_options["spontaneous_decay_intermediate"])
+    ψt = timeevolution.schroedinger_dynamic(cfg.tspan, cfg.ψ0, H; ode_kwargs...)[2];       
+
+    return ψt
+end 
+
+
 """
     simulation_czlp(cfg::CZLPConfig; ode_kwargs...)
 

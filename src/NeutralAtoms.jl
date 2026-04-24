@@ -9,6 +9,7 @@ noise, Lindblad dynamics for single-atom excitation, and blockade-mediated
 two-qubit phase-gate simulations.
 """
 module NeutralAtoms
+using JLD2
 using Distributed
 using Markdown
 using Distributions, Random
@@ -40,13 +41,16 @@ export
     simple_flattopHG_field, simple_flattopLG_field,
     HG_coeff, gauss_field, HG_coefficients, 
     decomposition_HG_2d, reconstruct_HG_field_2d,
-
+    
+    pure_simulation_czlp,
     simulation, RydbergConfig, get_rydberg_probs, plot_rydberg_probs,
     simulation_czlp, CZLPConfig, get_two_qubit_probs, plot_two_qubit_probs,
 
     get_gate, project_on_qubit, get_parity_osc,
-    get_fidelity_with_rz_phi, CZ_calibration_by_fidelity_oscillation,
-    get_rydberg_fidelity_configs, get_rydberg_infidelity, get_cz_infidelity
+    get_fidelity_with_rz_phi, CZ_calibration_by_PhiPlus_fidelity,
+    get_rydberg_fidelity_configs, get_rydberg_infidelity, get_cz_error_budget,
+
+    save_QO_operator, load_QO_operator
         
 include("utilities.jl")
 include("basic_experiments.jl")

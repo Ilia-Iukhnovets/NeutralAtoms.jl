@@ -20,13 +20,13 @@ end
 """
     CZ_calibration_by_fidelity_oscillation(cfg::CZLPConfig; ode_kwargs...)
 
-Scan a global `RZ` phase and return the Bell-state fidelity curve used to
-calibrate the CZ protocol.
+    Scan a global `RZ` phase and return the Bell-state fidelity curve used to
+    calibrate the CZ protocol.
 
-# Returns
-- `(ϕ_list, F_list, ϕ_opt)`, where `ϕ_opt` maximizes the fidelity proxy.
+    # Returns
+    - `(ϕ_list, F_list, ϕ_opt)`, where `ϕ_opt` maximizes the fidelity proxy.
 """
-function CZ_calibration_by_fidelity_oscillation(cfg::CZLPConfig; ode_kwargs...)
+function CZ_calibration_by_PhiPlus_fidelity(cfg::CZLPConfig; ode_kwargs...)
     cfg_parity = deepcopy(cfg)
 
     ket_pos = (ket_0 + ket_1) / sqrt(2) #ket_ipos = (ket_0 + 1.0im * ket_1) / sqrt(2)
@@ -39,17 +39,20 @@ function CZ_calibration_by_fidelity_oscillation(cfg::CZLPConfig; ode_kwargs...)
     ϕ_list = [0.0:0.0001:2π;];
     #global_RZ = ϕ -> RZ(ϕ) ⊗ RZ(ϕ);
     #F_list = [real(dagger(Phi_p)  * Had * global_RZ(ϕ) * ρ1 * dagger(Had * global_RZ(ϕ)) * Phi_p) for ϕ in ϕ_list];
-    F_list = [ get_fidelity_with_rz_phi(ρ, Had * Phi_p, ϕ) for ϕ in ϕ_list];
+    F_list = [ get_fidelity_with_rz_phi(ρ, cfg_parity.ψ0, ϕ) for ϕ in ϕ_list]; #Had * Phi_p
+
+    Pr_p = ket_p ⊗ dagger(ket_p)
+    Proj = Pr_p ⊗ Id + Id ⊗ Pr_p - Pr_p ⊗ Pr_p 
 
     #use plot(ϕ_list, F_list) in notebook
-    return ϕ_list, F_list, ϕ_list[argmax(F_list)]
+    return ϕ_list, F_list, ϕ_list[argmax(F_list)],  real(expect(Proj, ρ))
 end
 
 """
     get_parity_osc(ρ, ϕ_cal)
 
-Compute the parity oscillation expected after applying the CZ sequence and the
-phase correction `ϕ_cal`.
+    Compute the parity oscillation expected after applying the CZ sequence and the
+    phase correction `ϕ_cal`.
 """
 function get_parity_osc(ρ, ϕ_cal)
     S_ZZ = Z ⊗ Z;
@@ -78,42 +81,48 @@ basis_fidelity_states = [
 """
     get_rydberg_fidelity_configs(cfg, n_samples=20)
 
-Construct a set of derived configurations used for single-atom error-budget
-analysis.
+    Construct a set of derived configurations used for single-atom error-budget
+    analysis.
 
-Each returned configuration isolates one decoherence mechanism or the combined
-error budget.
+    Each returned configuration isolates one decoherence mechanism or the combined
+    error budget.
 """
 function get_rydberg_fidelity_configs(cfg, n_samples=20)
     configs = OrderedDict()
 
     # Config to measure error from intermediate state decay
     cfg_t = deepcopy(cfg)
-    cfg_t.atom_params[2] = 0.1
+    cfg_t.error_options["atom_motion"] = false #    cfg_t.atom_params[2] = 0.1
+    cfg_t.error_options["xy_motion"] = false
+    cfg_t.error_options["z_motion"] = false
+    cfg_t.error_options["Doppler"] = false
     cfg_t.error_options["spontaneous_decay_intermediate"] = true
     cfg_t.error_options["spontaneous_decay_rydberg"]      = false
     cfg_t.error_options["laser_noise"] = false
-    cfg_t.free_motion = true
     cfg_t.n_samples = 1
     configs["Intermdeiate state decay"] = cfg_t
 
     # Config to measure error from rydberg state decay
     cfg_t = deepcopy(cfg)
-    cfg_t.atom_params[2] = 0.1
+    cfg_t.error_options["atom_motion"] = false #    cfg_t.atom_params[2] = 0.1
+    cfg_t.error_options["xy_motion"] = false
+    cfg_t.error_options["z_motion"] = false
+    cfg_t.error_options["Doppler"] = false
     cfg_t.error_options["spontaneous_decay_intermediate"] = false
     cfg_t.error_options["spontaneous_decay_rydberg"]      = true
     cfg_t.error_options["laser_noise"] = false
-    cfg_t.free_motion = true
     cfg_t.n_samples = 1
     configs["Rydberg state decay"] = cfg_t
 
     # Config to measure error from laser_noise
     cfg_t = deepcopy(cfg)
-    cfg_t.atom_params[2] = 0.1
+    cfg_t.error_options["atom_motion"] = false #    cfg_t.atom_params[2] = 0.1
+    cfg_t.error_options["xy_motion"] = false
+    cfg_t.error_options["z_motion"] = false
+    cfg_t.error_options["Doppler"] = false
     cfg_t.error_options["spontaneous_decay_intermediate"] = false
-    cfg_t.error_options["spontaneous_decay_rydberg"] = false
+    cfg_t.error_options["spontaneous_decay_rydberg"]      = false
     cfg_t.error_options["laser_noise"] = true
-    cfg_t.free_motion = false
     cfg_t.n_samples = n_samples
     configs["Laser noise"] = cfg_t
 
@@ -122,16 +131,76 @@ function get_rydberg_fidelity_configs(cfg, n_samples=20)
     cfg_t.error_options["spontaneous_decay_intermediate"] = false
     cfg_t.error_options["spontaneous_decay_rydberg"] = false
     cfg_t.error_options["laser_noise"] = false
-    cfg_t.free_motion = true
+    cfg_t.error_options["free_motion"] = true
+    cfg_t.error_options["atom_motion"] = true
+    cfg_t.error_options["xy_motion"] = true
+    cfg_t.error_options["z_motion"] = true
+    cfg_t.error_options["Doppler"] = true
     cfg_t.n_samples = n_samples
     configs["Atom motion"] = cfg_t
+
+    # Config to measure error from xy_motion
+    cfg_t = deepcopy(cfg)
+    cfg_t.error_options["spontaneous_decay_intermediate"] = false
+    cfg_t.error_options["spontaneous_decay_rydberg"] = false
+    cfg_t.error_options["laser_noise"] = false
+    cfg_t.error_options["free_motion"] = true
+    cfg_t.error_options["atom_motion"] = true
+    cfg_t.error_options["xy_motion"] = true
+    cfg_t.error_options["z_motion"] = false
+    cfg_t.error_options["Doppler"] = false
+    cfg_t.n_samples = n_samples
+    configs["xy_motion"] = cfg_t
+    
+    # Config to measure error from z_motion
+    cfg_t = deepcopy(cfg)
+    cfg_t.error_options["spontaneous_decay_intermediate"] = false
+    cfg_t.error_options["spontaneous_decay_rydberg"] = false
+    cfg_t.error_options["laser_noise"] = false
+    cfg_t.error_options["free_motion"] = true
+    cfg_t.error_options["atom_motion"] = true
+    cfg_t.error_options["xy_motion"] = false
+    cfg_t.error_options["z_motion"] = true
+    cfg_t.error_options["Doppler"] = false
+    cfg_t.n_samples = n_samples
+    configs["z_motion"] = cfg_t
+    
+    # Config to measure error from xyz_motion
+    cfg_t = deepcopy(cfg)
+    cfg_t.error_options["spontaneous_decay_intermediate"] = false
+    cfg_t.error_options["spontaneous_decay_rydberg"] = false
+    cfg_t.error_options["laser_noise"] = false
+    cfg_t.error_options["free_motion"] = true
+    cfg_t.error_options["atom_motion"] = true
+    cfg_t.error_options["xy_motion"] = true
+    cfg_t.error_options["z_motion"] = true
+    cfg_t.error_options["Doppler"] = false
+    cfg_t.n_samples = n_samples
+    configs["xyz_motion"] = cfg_t
+    
+    # Config to measure error from Doppler effet
+    cfg_t = deepcopy(cfg)
+    cfg_t.error_options["spontaneous_decay_intermediate"] = false
+    cfg_t.error_options["spontaneous_decay_rydberg"] = false
+    cfg_t.error_options["laser_noise"] = false
+    cfg_t.error_options["free_motion"] = true
+    cfg_t.error_options["atom_motion"] = true
+    cfg_t.error_options["xy_motion"] = false
+    cfg_t.error_options["z_motion"] = false
+    cfg_t.error_options["Doppler"] = true
+    cfg_t.n_samples = n_samples
+    configs["Doppler"] = cfg_t
 
     # Config to measure total error
     cfg_t = deepcopy(cfg)
     cfg_t.error_options["spontaneous_decay_intermediate"] = true
     cfg_t.error_options["spontaneous_decay_rydberg"] = true
     cfg_t.error_options["laser_noise"] = true
-    cfg_t.free_motion = true
+    cfg_t.error_options["free_motion"] = true
+    cfg_t.error_options["atom_motion"] = true
+    cfg_t.error_options["xy_motion"] = true
+    cfg_t.error_options["z_motion"] = true
+    cfg_t.error_options["Doppler"] = true
     cfg_t.n_samples = n_samples
     configs["Total"] = cfg_t
 
@@ -142,11 +211,11 @@ end
     get_rydberg_infidelity(cfg::RydbergConfig; U=dense(identityoperator(basis)),
         states=basis_fidelity_states, n_samples=100, ode_kwargs...)
 
-Estimate a single-atom gate infidelity budget by averaging over input states and
-error channels.
+    Estimate a single-atom gate infidelity budget by averaging over input states and
+    error channels.
 
-The returned dictionary separates motion, laser noise, spontaneous decay, and
-total error contributions for the effective two-photon model.
+    The returned dictionary separates motion, laser noise, spontaneous decay, and
+    total error contributions for the effective two-photon model.
 """
 function get_rydberg_infidelity(
     cfg::RydbergConfig;
@@ -181,11 +250,11 @@ end
 """
     get_cz_infidelity(cfg::CZLPConfig; n_samples=1, ode_kwargs...)
 
-Estimate a CZ-gate infidelity budget using the parity-calibration workflow.
+    Estimate a CZ-gate infidelity budget using the parity-calibration workflow.
 
-The result separates calibration error from the remaining decoherence channels.
+    The result separates calibration error from the remaining decoherence channels.
 """
-function get_cz_infidelity(
+function get_cz_error_budget(
     cfg::CZLPConfig;
     n_samples=1,
     ode_kwargs...)
@@ -199,22 +268,21 @@ function get_cz_infidelity(
     Had = Id ⊗ Hadamard
     
     cfg_t = deepcopy(cfg)
+    cfg_t.error_options["atom_motion"] = false
+    cfg_t.error_options["xy_motion"] = false
+    cfg_t.error_options["z_motion"] = false
+    cfg_t.error_options["Doppler"] = false
     cfg_t.error_options["spontaneous_decay_intermediate"]    = false
     cfg_t.error_options["spontaneous_decay_rydberg"]         = false
     cfg_t.error_options["laser_noise"]                       = false
-    cfg_t.atom_params[2]                    = 0.1
     cfg_t.n_samples                         = 1
 
     println("Measuring intermediate state probability...")
-    ϕ_RZ = CZ_calibration_by_fidelity_oscillation(cfg_t)[3];
+    phi_list, F_list, ϕ_RZ = CZ_calibration_by_fidelity_oscillation(cfg_t);
     global_RZ = RZ(ϕ_RZ) ⊗ RZ(ϕ_RZ);
 
-    cfg_t.ψ0 = ket_pos ⊗ ket_pos
-    ρ_real = simulation_czlp(cfg_t)[1][end]
-    ρ_real .= Had * global_RZ * ρ_real * dagger(Had * global_RZ)
-    calibration_error = 1.0 - real(dagger(Φp) * ρ_real * Φp)
+    calibration_error = 1.0 - maximum(F_list) #real(dagger(Φp) * ρ_real * Φp)
 
-    println()
     println("Intermediate state probability: $(round(100.0*calibration_error; digits=4)) %")
     
     for name in ProgressBar(names)
@@ -224,9 +292,10 @@ function get_cz_infidelity(
         cfg_t.ψ0 = ket_pos ⊗ ket_pos
         ρ_real = simulation_czlp(cfg_t)[1][end]
         ρ_real .= Had * global_RZ * ρ_real * dagger(Had * global_RZ)
-        infidelities[name] = maximum([(1.0 - real(dagger(Φp) * ρ_real * Φp) - calibration_error), 0.0])
+        #infidelities[name] = maximum([(1.0 - real(dagger(Φp) * ρ_real * Φp) - calibration_error), 0.0])
+        infidelities[name] = 1.0 - real(dagger(Φp) * ρ_real * Φp) - calibration_error
+        #infidelities[name] = 1.0 - maximum(CZ_calibration_by_fidelity_oscillation(cfg_t)[2]);
 
-        println()
         println("Infidelity from $(name): $(round(100.0*infidelities[name]; digits=4)) %")
     end
 
