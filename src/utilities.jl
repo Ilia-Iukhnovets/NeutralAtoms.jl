@@ -62,7 +62,8 @@ function A_phase(x, y, z, w0, z0; θ=0.0)
     xt, yt, zt = sqrt(x^2 + y^2), 0.0, z 
     xt, zt = xt*cos(θ)-zt*sin(θ), xt*sin(θ) + zt*cos(θ)
     k = 2.0 * z0 / w0^2;
-    return exp.(-1.0im * k * zt .* (0.5*(xt .^2 + yt .^ 2) ./ (zt .^2  + z0 .^2)) + 1.0im * atan.(zt ./ z0));
+    #return exp.(-1.0im * k * zt .* (0.5*(xt .^2 + yt .^ 2) ./ (zt .^2  + z0 .^2)) + 1.0im * atan.(zt ./ z0));
+    return exp.(1.0im .* ( atan.(zt ./ z0) .- k * zt .*(1.0 .+ 0.5 .* (xt .^2 + yt .^ 2) ./ (zt .^2  + z0 .^2) ) ) );
 end;
 
 """
@@ -257,11 +258,6 @@ mutable struct RydbergConfig
     decay_params::Vector{Float64}
 
     error_options::Dict{String, Any}
-    #atom_motion::Bool
-    #free_motion::Bool
-    #laser_noise::Bool
-    #spontaneous_decay_intermediate::Bool
-    #spontaneous_decay_rydberg::Bool
 end
 
 """
@@ -306,11 +302,6 @@ mutable struct CZLPConfig
     decay_params::Vector{Float64}
     
     error_options::Dict{String, Any}
-    #atom_motion::Bool
-    #free_motion::Bool
-    #laser_noise::Bool
-    #spontaneous_decay_intermediate::Bool
-    #spontaneous_decay_rydberg::Bool
 
     atom_centers::Vector{Vector{Float64}}
     c6::Float64
@@ -329,3 +320,19 @@ end
 #     factor2 = sqrt(sum(Ω_samples^2) / length(Ω_samples))
 #     return factor, factor2
 # end
+
+using JLD2
+
+function save_QO_operator(filename::String, op::Operator; name::String="operator")
+    jldopen(filename, "w") do file
+        file[name] = op
+    end
+    println("Operator saved to $filename")
+end
+
+function load_QO_operator(filename::String; name::String="operator")
+    op = jldopen(filename, "r") do file
+        file[name]
+    end
+    return op
+end

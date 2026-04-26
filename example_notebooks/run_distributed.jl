@@ -9,10 +9,10 @@ addprocs(num_proc)
 
 @everywhere function compute_ρ(i)
     _, cfg_CZ = get_6P_config();
-    
+
     #cfg_CZ.atom_params[2] = 70.0; #temperature #
-    cfg_CZ.error_options["z_motion"] = false #true
-    cfg_CZ.n_samples = 50 
+    #cfg_CZ.error_options["z_motion"] = true # false # 
+    cfg_CZ.n_samples = 1 #40
     
     ρ_end = NeutralAtoms.simulation_czlp(cfg_CZ)[1][end]
     return ρ_end 

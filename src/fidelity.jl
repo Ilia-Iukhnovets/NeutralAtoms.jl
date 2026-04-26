@@ -87,7 +87,7 @@ basis_fidelity_states = [
     Each returned configuration isolates one decoherence mechanism or the combined
     error budget.
 """
-function get_rydberg_fidelity_configs(cfg, n_samples=20)
+function get_rydberg_fidelity_configs(cfg, n_samples=20; int_prob=false)
     configs = OrderedDict()
 
     # Config to measure error from intermediate state decay
@@ -203,6 +203,21 @@ function get_rydberg_fidelity_configs(cfg, n_samples=20)
     cfg_t.error_options["Doppler"] = true
     cfg_t.n_samples = n_samples
     configs["Total"] = cfg_t
+
+    # Config to measure intermediate state probability
+    if int_prob
+        cfg_t = deepcopy(cfg)
+        cfg_t.error_options["spontaneous_decay_intermediate"] = false
+        cfg_t.error_options["spontaneous_decay_rydberg"] = false
+        cfg_t.error_options["laser_noise"] = false
+        cfg_t.error_options["free_motion"] = false
+        cfg_t.error_options["atom_motion"] = false
+        cfg_t.error_options["xy_motion"] = false
+        cfg_t.error_options["z_motion"] = false
+        cfg_t.error_options["Doppler"] = false
+        cfg_t.n_samples = 1
+        configs["Intermdeiate propability"] = cfg_t
+    end
 
     return configs
 end 
